@@ -153,7 +153,12 @@ GSC_PASSWORD=your-test-account-password
 > GSC has **no staging environment**. These tests run against the live booking
 > system used by real customers.
 >
-> - **Never complete a payment.** The suite stops at the seat map / order summary.
+> - **Never complete a payment.** The suite stops at the F&B step (`/e-combo`),
+>   one page short of payment.
+> - **Step 3 holds real inventory.** Confirming a seat reserves it on the live
+>   system until the hold expires. The test takes exactly one seat, on
+>   tomorrow's earliest (lowest-demand) screening in a standard hall. Do not
+>   widen it without thinking about that impact.
 > - Use a **dedicated test account**, never a real customer's.
 > - Never commit `.env` or paste credentials into a test file, a CI log, or an issue.
 > - Keep worker counts low. The suite should look like a few users, not a load test.
@@ -235,5 +240,6 @@ Every run produces:
 Traces are captured on first retry; screenshots and video are retained on
 failure. Open a trace with `npm run trace <path-to-trace.zip>` for a full
 timeline, DOM snapshots, and network log.
-#   M o d e f a i r Q A  
+#   M o d e f a i r Q A 
+ 
  

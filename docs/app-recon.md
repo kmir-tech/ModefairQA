@@ -535,3 +535,111 @@ Available Showtimes strip, so match with optional whitespace.
 
 **The suite stops here.** No seat is ever selected, no inventory is held, and
 payment is never reached.
+
+---
+
+# Step 3 — Continue booking (verified 2026-08-20)
+
+## 19. The API has TWO cinema names and they usually disagree
+
+Each `<location>` in the showtimes API carries both:
+
+```xml
+<location name="GSC Mid Valley" epayment_name="Kuala Lumpur - Mid Valley Megamall" …>
+```
+
+**49 of 55 locations differ.** The booking UI renders `epayment_name`; `name`
+is an internal label.
+
+This mattered more than it looks. The step-2 showtime-grid comparison filtered
+API results by `name`, which meant it only lined up for the six venues where
+the two happen to coincide — and it looked green purely because the first
+cinema in the list (Aurum, The Exchange TRX) is one of them. Any reordering, or
+any film not screening at Aurum, would have turned a correct application red.
+
+Always read `epayment_name`, falling back to `name`. Verified after the fix:
+10/10 sampled cinemas match the UI exactly, including six with differing names.
+
+## 20. Selecting a seat
+
+Standard hall, `/seat-selection`:
+
+| State | Seat class |
+|---|---|
+| Free | `not-blank bg-[#FFFFFF] seat-style` |
+| Selected | `bg-gsc-main-yellow not-blank seat-style` |
+
+Availability is encoded **only in the Tailwind background colour**. There is no
+`disabled`, no `aria-pressed`, no data attribute — so "is this seat free?" is an
+inference, and the test verifies the seat actually turned yellow rather than
+trusting it.
+
+### Locator trap that cost real debugging time
+
+`availableSeats.first()` — where `availableSeats` is filtered on the white
+background class — is **not a stable handle**. Playwright re-resolves locators
+on every action, so the instant the seat is selected it turns yellow, stops
+matching, and the locator silently points at the *next* free seat. The
+follow-up assertion then reads that seat as "still not selected" and loops
+forever.
+
+Pin the seat by its **index into `.seat-style.not-blank`**, which selection does
+not change. Matching on the seat label via `filter({ hasText })` did not work
+reliably either.
+
+Clicking a selected seat **deselects** it, so any retry loop must check the
+current state before clicking again.
+
+### The order bar
+
+```html
+<div class="btm-btn">
+  <div class="btn-title">Seat Selection</div>
+  <div>Adult x 1</div>
+  <div>G01</div>
+  <span class="font-montBold">RM 15.00</span>
+  <div class="btn-style"><span>Confirm</span> - 1 ticket(s)</div>
+```
+
+Selecting one seat yields `Adult x 1`, the seat label, and a real price
+(RM 15.00 at Mid Valley). Ticket type defaults to Adult — there is no separate
+ticket-type step to complete first.
+
+### ACCESSIBILITY DEFECT — Confirm is not a control
+
+The Confirm affordance is a plain `<div class="btn-style">` with no `role`, no
+`tabindex`, and no accessible name. It is not keyboard reachable and is not
+announced as a button; `getByRole('button', …)` matches **nothing** on this
+page. Third instance of the same pattern, after sections 13 and 17.
+
+## 21. Checkout continues at `/e-combo`
+
+Confirming seats advances to the F&B upsell, which carries the booking forward:
+
+```
+SPIDER-MAN: BRAND NEW DAY  13  ENG  2 h 25 m  2D
+Kuala Lumpur - Mid Valley Megamall
+Fri 21 Aug, 10:00AM at Hall 2
+G01    Adult x 1
+[F&B catalogue…]                                RM 0.00
+```
+
+**This is where the suite stops.** The next step is payment.
+
+Guard carefully if asserting "we did not reach payment": the booking host is
+`epaymentwebapp.gsc.com.my`, which contains the substring "payment", so a naive
+`not.toHaveURL(/payment/)` fails on every run. Match against
+`new URL(page.url()).pathname` instead.
+
+## 22. Production impact of this test
+
+Confirming a seat **holds real inventory** on the live system until the hold
+expires. The test is scoped to limit that:
+
+- exactly one seat, never a block
+- a standard 2D hall at an ordinary venue
+- tomorrow's earliest screening — the lowest-demand slot on offer
+- stops at `/e-combo`; payment is never reached
+
+Holds are left to expire naturally; no cancel affordance was found on the seat
+map. Do not widen this test without a deliberate decision about that impact.

@@ -106,8 +106,18 @@ export class ShowtimePage {
     return this.page.locator('mat-expansion-panel');
   }
 
+  /**
+   * One cinema's accordion, matched on the exact venue name.
+   *
+   * `exact: true` and `.first()` both matter: accessible-name matching is
+   * substring-based by default, so "Kuala Lumpur - Mid Valley Megamall" would
+   * also match longer venue names, and a multi-element panel locator breaks
+   * every nth() lookup underneath it.
+   */
   cinemaPanel(name: string): Locator {
-    return this.cinemaPanels.filter({ has: this.page.getByRole('heading', { name, level: 3 }) });
+    return this.cinemaPanels
+      .filter({ has: this.page.getByRole('heading', { name, level: 3, exact: true }) })
+      .first();
   }
 
   async cinemaName(panel: Locator): Promise<string> {
@@ -166,23 +176,31 @@ export class ShowtimePage {
   }
 
   /**
-   * The tile for one specific screening within a cinema panel.
+   * The first screening of a given format within a cinema panel.
    *
-   * Matched on time AND format: a cinema often screens the same film at the
-   * same time in two formats, so time alone is ambiguous.
+   * Deliberately NOT matched on an exact time from the API. The API read and
+   * the UI render happen seconds apart, and a screening can drop out of the
+   * grid in between (it sells out, or its start time passes). Requiring an
+   * exact time made the test fail for a perfectly healthy application.
+   *
+   * The format still pins the hall type, which is what the caller actually
+   * cares about.
    */
-  async findShowtimeTile(panel: Locator, time: string, type: string): Promise<Locator> {
+  async findShowtimeOfType(panel: Locator, type: string): Promise<Locator> {
     const tiles = this.showtimes(panel);
     const total = await tiles.count();
-
-    const wanted = time.replace(/\s+/g, '');
+    const seen: string[] = [];
 
     for (let i = 0; i < total; i++) {
       const showtime = await this.readShowtime(tiles.nth(i));
-      if (showtime.time === wanted && showtime.type === type) return tiles.nth(i);
+      if (showtime.type === type) return tiles.nth(i);
+      seen.push(`${showtime.time}/${showtime.type}`);
     }
 
-    throw new Error(`No ${type} screening at ${time} in this cinema on the selected date.`);
+    throw new Error(
+      `No ${type} screening in this cinema on the selected date. ` +
+        `Screenings present: ${seen.join(', ') || '(none)'}`,
+    );
   }
 
   /**

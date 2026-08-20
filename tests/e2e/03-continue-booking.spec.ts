@@ -53,7 +53,7 @@ test.describe('Step 3: continue booking', () => {
     await showtimePage.selectDate(operatingDate);
 
     const panel = showtimePage.cinemaPanel(screening.cinema);
-    const tile = await showtimePage.findShowtimeTile(panel, screening.time, screening.type);
+    const tile = await showtimePage.findShowtimeOfType(panel, screening.type);
     await showtimePage.selectShowtime(tile);
 
     await expect(page).toHaveURL(/\/seat-selection/);

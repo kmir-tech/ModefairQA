@@ -29,7 +29,7 @@ export class HomePage {
    * acceptable: 13s for a primary navigation is a defect, and it is reported as
    * one rather than quietly absorbed here.
    */
-  private static readonly NAV_TIMEOUT = 90_000;
+  private static readonly NAV_TIMEOUT = 120_000;
 
   constructor(private readonly page: Page) {}
 

@@ -30,7 +30,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 1,
 
   /* Be a polite guest on someone else's production infrastructure. */
-  workers: process.env.CI ? 2 : 4,
+  workers: process.env.CI ? 2 : 3,
 
   /* Generous: real-world third-party site over the public internet. */
   timeout: 90_000,
