@@ -29,7 +29,7 @@ import { malaysianOperatingDate } from '../../src/utils/dates';
 test.describe('Step 3: continue booking', () => {
   const credentials = gscCredentials();
 
-  test('a member can select a seat, see the order total, and reach checkout', async ({ page }) => {
+  test('a member can select a seat, see the order total, and reach checkout @auth @inventory', async ({ page }) => {
     test.skip(
       credentials === null,
       'Set GSC_MOBILE and GSC_PASSWORD in .env to run the authenticated booking journey.',

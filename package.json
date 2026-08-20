@@ -20,13 +20,21 @@
     "report": "playwright show-report",
     "trace": "playwright show-trace",
     "codegen": "playwright codegen https://www.gsc.com.my",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dashboard": "concurrently -n api,ui -c yellow,cyan \"node dashboard/server.mjs\" \"vite --config dashboard/vite.config.js\"",
+    "dashboard:api": "node dashboard/server.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "@types/node": "^26.2.0",
+    "@vitejs/plugin-react": "^6.1.0",
+    "concurrently": "^10.0.5",
     "dotenv": "^17.2.5",
+    "express": "^5.2.1",
     "fast-xml-parser": "^5.11.0",
-    "typescript": "^6.0.2"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "^6.0.2",
+    "vite": "^8.2.1"
   }
 }

@@ -64,7 +64,7 @@ test.describe('Step 2: select a date and showtime', () => {
 test.describe('Step 2: the booking journey continues', () => {
   const credentials = gscCredentials();
 
-  test('selecting a showtime carries a signed-in member into seat selection', async ({ page }) => {
+  test('selecting a showtime carries a signed-in member into seat selection @auth', async ({ page }) => {
     test.skip(
       credentials === null,
       'Set GSC_MOBILE and GSC_PASSWORD in .env to run the authenticated booking journey.',

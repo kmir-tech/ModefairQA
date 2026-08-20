@@ -176,6 +176,10 @@ GSC_PASSWORD=your-test-account-password
 ├── docs/
 │   └── app-recon.md         Verified facts about the target application
 │
+├── dashboard/               Test Board - run scenarios from the browser
+│   ├── server.mjs           API that drives the Playwright CLI
+│   └── src/                 React UI
+│
 ├── src/
 │   ├── pages/               Page objects, split by application boundary
 │   ├── api/                 XML showtime API client - the assertion oracle
@@ -230,6 +234,44 @@ that is in `CLAUDE.md`.
 
 ---
 
+## Test Board (dashboard)
+
+A small React dashboard that lists every scenario and runs them individually,
+so you can trigger one test without remembering its file path.
+
+```bash
+npm run dashboard          # starts the API and the UI together
+```
+
+Then open <http://localhost:5173>.
+
+| Piece | Port | What it does |
+|---|---|---|
+| API (`dashboard/server.mjs`) | 8787 | Drives the Playwright CLI: lists scenarios, runs one |
+| UI (Vite + React) | 5173 | The board; proxies `/api` to the API |
+
+Run just the API with `npm run dashboard:api`.
+
+### How it behaves
+
+- **Scenarios come from Playwright itself** (`playwright test --list`), so new
+  specs appear on the board without touching the dashboard. Steps are grouped
+  and numbered from the spec filenames.
+- **Runs are serialised.** These tests hit live production, so the API refuses a
+  second run while one is in flight and the board disables the other buttons.
+  Clicking Run five times cannot fan out five browsers at GSC.
+- **Results are real Playwright output** — status, duration, and the full
+  failure message with its code frame.
+- **Scenarios with side effects are labelled**: `signs in` for the ones needing
+  credentials, and `holds a seat` for the booking test that reserves real
+  inventory. Check the badge before you click Run.
+- Only scenario ids that Playwright reported are runnable; the API will not pass
+  arbitrary input to a spawned process.
+
+The board runs the `chromium` project only. Use the CLI for cross-browser runs.
+
+---
+
 ## Reporting
 
 Every run produces:
@@ -240,6 +282,3 @@ Every run produces:
 Traces are captured on first retry; screenshots and video are retained on
 failure. Open a trace with `npm run trace <path-to-trace.zip>` for a full
 timeline, DOM snapshots, and network log.
-#   M o d e f a i r Q A 
- 
- 
